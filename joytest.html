@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Gamepad API</title>
+
+    <script type="text/javascript" src="joywidgets.js"></script>
+
+    <style type="text/css">
+    #warning {
+        background-color: #EBF222;
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 20px;
+        text-align: center;
+        color: red;
+        border-radius: 10px;
+        padding: 28px;
+        margin: 8px 0;
+    }
+    header {
+        color: #333;
+        background-color: lightgray;
+        border-radius: 10px;
+        padding: 8px;
+    }
+    header h1 {
+        font-size: 30px;
+        margin: 0;
+    }
+    section.gamepad {
+        color: #333;
+        border: 1px lightgray solid;
+        border-radius: 10px;
+        margin: 8px 0;
+    }
+    section.gamepad header.root {
+        background-color: lightgray;
+        border-radius: 8px 8px 0 0;
+        padding: 8px;
+    }
+    section.gamepad header.root h1 {
+        font-size: 25px;
+        margin: 0;
+    }
+
+    section.subsection {
+        margin: 8px;
+    }
+    section.subsection header {
+        border-bottom: 1px lightgray solid;
+        margin-bottom: 8px;
+    }
+    section.subsection header h1 {
+        font-size: 20px;
+        margin: 0;
+        padding: 0;
+    }
+
+    section.subsection span.button {
+        border: 1px lightgray solid;
+        border-radius: 4px;
+        margin: 2px;
+        padding: 2px;
+        display: inline-block;
+        text-align: center;
+        width: 18px;
+    }
+
+    section.subsection dl dt {
+        background-color: lightgray;
+        border-radius: 4px;
+        float: left;
+        font-weight: bold;
+        padding: 4px;
+        width: 100px;
+    }
+    section.subsection dl dd {
+        font-style: italic;
+        padding: 4px 0;
+        margin-left: 112px;
+        border-bottom: 1px lightgray solid;
+        position: relative;
+    }
+
+    section.subsection span.hideButton {
+        background-color: lightgray;
+        width: 22px;
+        height: 22px;
+        margin: 0;
+        border-radius: 18px 0 0 0;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
+    </style>
+</head>
+<body>
+    <header>
+    <h1>Gamepad API</h1>
+    </header>
+
+    <div id="warning"></div>
+    <script type="text/javascript">
+    function clearWarning() {
+        var warningNode = document.getElementById('warning')
+        while (warningNode.hasChildNodes())
+            warningNode.removeChild(warningNode.lastChild);
+    }
+    function hideWarning() {
+        document.getElementById('warning').hidden = true;
+    }
+    function showWarning() {
+        document.getElementById('warning').hidden = false;
+    }
+    function warning(message) {
+        clearWarning();
+        showWarning();
+        if (message) {
+            var p = document.createElement("p");
+            p.appendChild(document.createTextNode(message));
+            document.getElementById('warning').appendChild(p);
+        }
+    }
+    </script>
+
+    <div id="gamepads"></div>
+    <script type="text/javascript">
+    var gamepads = [];
+    function pollGamepads() {
+        window.webkitRequestAnimationFrame(pollGamepads);
+        var noGamepads = true;
+        var navGamepads = navigator.webkitGetGamepads();
+        for (var i = 0; i < navGamepads.length; ++i) {
+            var data = navGamepads[i];
+            if (data) {
+                var gamepad = window.gamepads[i];
+                if (gamepad) {
+                    gamepad.update(data);
+                } else {
+                    var gamepadsDiv = document.getElementById('gamepads');
+                    gamepad = new Gamepad(data, gamepadsDiv);
+                    window.gamepads[i] = gamepad;
+                }
+                noGamepads = false;
+            } else if (window.gamepads[i]) {
+                window.gamepads[i].clear();
+                delete window.gamepads[i];
+            }
+        }
+        if (noGamepads)
+            warning('Connect a gamepad, press a button, move the joystick.');
+        else
+            hideWarning();
+    }
+
+    function initGamepads()
+    {
+        if (window.location.search == '?fake') {
+            navigator.webkitGetGamepads = function() {
+                var gamepads = [{
+                    id : 'Fake Gamepad',
+                    index: 0,
+                    timestamp : 12345,
+                    axes : [0, -0.65611, -1, 0, 0.2],
+                    buttons : [0, 1, 0, 0, 0, 0, 0, 1, 0]
+                },
+                {
+                    id : 'Another Fake Gamepad',
+                    index: 1,
+                    timestamp : 12345,
+                    axes : [0, 0, 0, 0, -0.65611, 0, 0.2],
+                    buttons : [0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+                }];
+                return gamepads;
+            }
+            window.webkitRequestAnimationFrame = function() {};
+        } else {
+            warning('WebKit compiled without Gamepad support.');
+        }
+
+        if (navigator.webkitGetGamepads)
+            window.onload = pollGamepads();
+    }
+    initGamepads();
+    </script>
+</body>
+</html>
+
